@@ -94,30 +94,11 @@ CrawlerWidget::CrawlerWidget(SavedSearches* searches, QWidget *parent)
 
     QListView *visibilityView = new QListView( this );
     visibilityView->setMovement( QListView::Static );
-    visibilityView->setMinimumWidth( 170 ); // Only needed with custom style-sheet
     visibilityView->setModel( visibilityModel );
 
     visibilityBox = new QComboBox();
     visibilityBox->setModel( visibilityModel );
     visibilityBox->setView( visibilityView );
-
-    // TODO: consider not overriding the stylesheet and just display the text
-    // when drop down is closed.
-    // Also, maybe there is some way to set the popup width to be
-    // sized-to-content (as it is when the stylesheet is not overriden) in the
-    // stylesheet as opposed to setting a hard min-width on the view above.
-    visibilityBox->setStyleSheet( " \
-        QComboBox:!on {\
-            padding: 1px 1px 1px 6px;\
-            width: 20px;\
-            height: 15px;\
-            border: 1px solid gray;\
-        } \
-        QComboBox::drop-down::down-arrow {\
-            width: 0px;\
-            border-width: 0px;\
-        } \
-" );
 
     // Construct the Search Info line
     searchInfoLine = new InfoLine();
