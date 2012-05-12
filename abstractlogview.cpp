@@ -35,6 +35,7 @@
 #include <QScrollBar>
 #include <QMenu>
 #include <QAction>
+#include <QtCore>
 
 #include "log.h"
 
@@ -105,7 +106,7 @@ inline void LineDrawer::addChunk( const LineChunk& chunk,
 }
 
 inline void LineDrawer::draw( QPainter& painter,
-        int xPos, int yPos, int line_width, const QString& line )
+        int xPos, int yPos, int xPadding, int line_width, const QString& line )
 {
     QFontMetrics fm = painter.fontMetrics();
     const int fontHeight = fm.height();
@@ -123,7 +124,7 @@ inline void LineDrawer::draw( QPainter& painter,
         painter.fillRect( xPos, yPos, chunk_width,
                 fontHeight, chunk.backColor() );
         painter.setPen( chunk.foreColor() );
-        painter.drawText( xPos, yPos + fontAscent, cutline );
+        painter.drawText( xPos + xPadding, yPos + fontAscent, cutline );
         xPos += chunk_width;
     }
 
@@ -177,14 +178,12 @@ void DigitsBuffer::timerEvent( QTimerEvent* event )
 // Graphic parameters
 
 // Looks better with an odd value
-const int AbstractLogView::bulletLineX_ = 11;
-const int AbstractLogView::leftMarginPx_ = bulletLineX_ + 2;
-
 const int AbstractLogView::OVERVIEW_WIDTH = 27;
 
 AbstractLogView::AbstractLogView(const AbstractLogData* newLogData,
         const QuickFindPattern* const quickFindPattern, QWidget* parent) :
     QAbstractScrollArea( parent ),
+    leftMarginPx_( 0 ),
     selectionStartPos_(),
     selectionCurrentEndPos_(),
     autoScrollTimer_(),
@@ -577,6 +576,11 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
         static const QBrush matchBulletBrush = QBrush( Qt::red );
         static const QBrush markBrush = QBrush( "dodgerblue" );
 
+        const int LINE_WIDTH = 1;
+        const int BULLET_MARGIN_WIDTH = 11;
+        const int LINE_NUMBER_PADDING = 3;
+        const int CONTENT_PADDING = 2;
+
         // First check the lines to be drawn are within range (might not be the case if
         // the file has just changed)
         const int nbLines = logData->getNbLine();
@@ -593,16 +597,43 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
         // Lines to write
         const QStringList lines = logData->getExpandedLines( firstLine, lastLine - firstLine + 1 );
 
+        leftMarginPx_ = 0;
+
         // First draw the bullet left margin
+        int bulletMarginX = leftMarginPx_;
         painter.setPen(palette.color(QPalette::Text));
-        painter.drawLine( bulletLineX_, 0, bulletLineX_, viewport()->height() );
-        painter.fillRect( 0, 0, bulletLineX_, viewport()->height(), Qt::darkGray );
+        painter.drawLine( bulletMarginX + BULLET_MARGIN_WIDTH,
+                          0,
+                          bulletMarginX + BULLET_MARGIN_WIDTH,
+                          viewport()->height() );
+        painter.fillRect( bulletMarginX, 0,
+                          BULLET_MARGIN_WIDTH, viewport()->height(),
+                          Qt::darkGray );
+        leftMarginPx_ += BULLET_MARGIN_WIDTH + LINE_WIDTH;
+
+        // Draw the line number margin
+        // TODO: Calculate these once per file load
+        int totalLines = logData->getNbLine();
+        int maxLineNumberDigits = totalLines > 0 ?
+            qFloor( qLn( totalLines ) / qLn( 10 ) + 1 ) : 1;
+        int lineNumberWidth = charWidth_ * maxLineNumberDigits;
+        int lineNumberMarginWidth = 2 * LINE_NUMBER_PADDING + lineNumberWidth;
+        int lineNumberMarginX = leftMarginPx_;
+        painter.setPen(palette.color(QPalette::Text));
+        painter.drawLine( lineNumberMarginX + lineNumberMarginWidth,
+                          0,
+                          lineNumberMarginX + lineNumberMarginWidth,
+                          viewport()->height() );
+        painter.fillRect( lineNumberMarginX, 0,
+                          lineNumberMarginWidth, viewport()->height(),
+                          Qt::lightGray );
+        leftMarginPx_ += lineNumberMarginWidth + LINE_WIDTH;
 
         // Then draw each line
         for (int i = firstLine; i <= lastLine; i++) {
             // Position in pixel of the base line of the line to print
             const int yPos = (i-firstLine) * fontHeight;
-            const int xPos = bulletLineX_ + 2;
+            const int xPos = leftMarginPx_;
 
             // string to print, cut to fit the length and position of the view
             const QString line = lines[i - firstLine];
@@ -693,22 +724,23 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
                     lineDrawer.addChunk ( chunk, fore, back );
                 }
 
-                lineDrawer.draw( painter, xPos, yPos,
-                        viewport()->width(), cutLine );
+                lineDrawer.draw( painter, xPos, yPos, CONTENT_PADDING,
+                                 viewport()->width(), cutLine );
             }
             else {
                 // Nothing to be highlighted, we print the whole line!
                 painter.fillRect( xPos, yPos, viewport()->width(),
                         fontHeight, backColor );
                 painter.setPen( foreColor );
-                painter.drawText( xPos, yPos + fontAscent, cutLine );
+                painter.drawText( xPos + CONTENT_PADDING, yPos + fontAscent,
+                                  cutLine );
             }
 
             // Then draw the bullet
             painter.setPen( palette.color( QPalette::Text ) );
             const int circleSize = 3;
             const int arrowHeight = 4;
-            const int middleXLine = bulletLineX_ / 2;
+            const int middleXLine = bulletMarginX + BULLET_MARGIN_WIDTH / 2;
             const int middleYLine = yPos + (fontHeight / 2);
 
             const LineType line_type = lineType( i );
@@ -718,7 +750,7 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
                     QPoint(1, middleYLine - 2),
                     QPoint(middleXLine, middleYLine - 2),
                     QPoint(middleXLine, middleYLine - arrowHeight),
-                    QPoint(bulletLineX_ - 2, middleYLine),
+                    QPoint(bulletMarginX + BULLET_MARGIN_WIDTH - 2, middleYLine),
                     QPoint(middleXLine, middleYLine + arrowHeight),
                     QPoint(middleXLine, middleYLine + 2),
                     QPoint(1, middleYLine + 2 ),
@@ -736,6 +768,15 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
                         middleYLine - circleSize,
                         circleSize * 2, circleSize * 2 );
             }
+
+            // Draw the line number
+            static const QString lineNumberFormat( "%1" );
+            const QString& lineNumberStr =
+                lineNumberFormat.arg( i + 1, maxLineNumberDigits );
+            painter.setPen( palette.color( QPalette::Text ) );
+            painter.drawText( lineNumberMarginX + LINE_NUMBER_PADDING,
+                              yPos + fontAscent, lineNumberStr );
+
         } // For each line
     }
     LOG(logDEBUG4) << "End of repaint";

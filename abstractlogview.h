@@ -76,8 +76,8 @@ class LineDrawer
     // Draw the current line of text using the given painter,
     // in the passed block (in pixels)
     // The line must be cut to fit on the screen.
-    void draw( QPainter& painter, int xPos, int yPos,
-            int line_width, const QString& line );
+    void draw( QPainter& painter, int xPos, int yPos, int xPadding,
+               int line_width, const QString& line );
 
   private:
     class Chunk {
@@ -231,9 +231,10 @@ class AbstractLogView : public QAbstractScrollArea
 
   private:
     // Constants
-    static const int bulletLineX_;
-    static const int leftMarginPx_;
     static const int OVERVIEW_WIDTH;
+
+    // Total size of all margins in pixels
+    int leftMarginPx_;
 
     // Digits buffer
     DigitsBuffer digitsBuffer_;
