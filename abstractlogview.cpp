@@ -184,6 +184,7 @@ AbstractLogView::AbstractLogView(const AbstractLogData* newLogData,
         const QuickFindPattern* const quickFindPattern, QWidget* parent) :
     QAbstractScrollArea( parent ),
     leftMarginPx_( 0 ),
+    lineNumbersVisible_( false ),
     selectionStartPos_(),
     selectionCurrentEndPos_(),
     autoScrollTimer_(),
@@ -612,22 +613,27 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
         leftMarginPx_ += BULLET_MARGIN_WIDTH + LINE_WIDTH;
 
         // Draw the line number margin
-        // TODO: Calculate these once per file load
-        int totalLines = logData->getNbLine();
-        int maxLineNumberDigits = totalLines > 0 ?
-            qFloor( qLn( totalLines ) / qLn( 10 ) + 1 ) : 1;
-        int lineNumberWidth = charWidth_ * maxLineNumberDigits;
-        int lineNumberMarginWidth = 2 * LINE_NUMBER_PADDING + lineNumberWidth;
-        int lineNumberMarginX = leftMarginPx_;
-        painter.setPen(palette.color(QPalette::Text));
-        painter.drawLine( lineNumberMarginX + lineNumberMarginWidth,
-                          0,
-                          lineNumberMarginX + lineNumberMarginWidth,
-                          viewport()->height() );
-        painter.fillRect( lineNumberMarginX, 0,
-                          lineNumberMarginWidth, viewport()->height(),
-                          Qt::lightGray );
-        leftMarginPx_ += lineNumberMarginWidth + LINE_WIDTH;
+        int maxLineNumberDigits = 0;
+        int lineNumberMarginX = 0;
+        if ( lineNumbersVisible_ ) {
+            // TODO: Calculate these once per file load
+            int totalLines = logData->getNbLine();
+            maxLineNumberDigits = totalLines > 0 ?
+                qFloor( qLn( totalLines ) / qLn( 10 ) + 1 ) : 1;
+            int lineNumberWidth = charWidth_ * maxLineNumberDigits;
+            int lineNumberMarginWidth =
+                2 * LINE_NUMBER_PADDING + lineNumberWidth;
+            lineNumberMarginX = leftMarginPx_;
+            painter.setPen(palette.color(QPalette::Text));
+            painter.drawLine( lineNumberMarginX + lineNumberMarginWidth,
+                              0,
+                              lineNumberMarginX + lineNumberMarginWidth,
+                              viewport()->height() );
+            painter.fillRect( lineNumberMarginX, 0,
+                              lineNumberMarginWidth, viewport()->height(),
+                              Qt::lightGray );
+            leftMarginPx_ += lineNumberMarginWidth + LINE_WIDTH;
+        }
 
         // Then draw each line
         for (int i = firstLine; i <= lastLine; i++) {
@@ -770,12 +776,14 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
             }
 
             // Draw the line number
-            static const QString lineNumberFormat( "%1" );
-            const QString& lineNumberStr =
-                lineNumberFormat.arg( i + 1, maxLineNumberDigits );
-            painter.setPen( palette.color( QPalette::Text ) );
-            painter.drawText( lineNumberMarginX + LINE_NUMBER_PADDING,
-                              yPos + fontAscent, lineNumberStr );
+            if ( lineNumbersVisible_ ) {
+                static const QString lineNumberFormat( "%1" );
+                const QString& lineNumberStr =
+                    lineNumberFormat.arg( i + 1, maxLineNumberDigits );
+                painter.setPen( palette.color( QPalette::Text ) );
+                painter.drawText( lineNumberMarginX + LINE_NUMBER_PADDING,
+                                  yPos + fontAscent, lineNumberStr );
+            }
 
         } // For each line
     }
@@ -988,6 +996,11 @@ void AbstractLogView::jumpToLine( int line )
 
     // This will also trigger a scrollContents event
     verticalScrollBar()->setValue( newTopLine );
+}
+
+void AbstractLogView::setLineNumbersVisible( bool lineNumbersVisible )
+{
+    lineNumbersVisible_ = lineNumbersVisible;
 }
 
 //

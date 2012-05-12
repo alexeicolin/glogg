@@ -222,6 +222,9 @@ class AbstractLogView : public QAbstractScrollArea
     // (does NOT emit followDisabled() )
     void jumpToLine( int line );
 
+    // Configure the setting of whether to show line number margin
+    void setLineNumbersVisible( bool lineNumbersVisible );
+
   private slots:
     void handlePatternUpdated();
     void addToSearch();
@@ -241,6 +244,9 @@ class AbstractLogView : public QAbstractScrollArea
 
     // Follow mode
     bool followMode_;
+
+    // Whether to show line numbers or not
+    bool lineNumbersVisible_;
 
     // Pointer to the CrawlerWidget's data set
     const AbstractLogData* logData;
