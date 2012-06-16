@@ -621,6 +621,7 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
 
         const int SEPARATOR_WIDTH = 1;
         const int BULLET_MARGIN_WIDTH = 11;
+        const int CONTENT_MARGIN_WIDTH = 1;
         const int LINE_NUMBER_PADDING = 3;
 
         // First check the lines to be drawn are within range (might not be the case if
@@ -678,7 +679,7 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
         for (int i = firstLine; i <= lastLine; i++) {
             // Position in pixel of the base line of the line to print
             const int yPos = (i-firstLine) * fontHeight;
-            const int xPos = leftMarginPx_;
+            const int xPos = leftMarginPx_ + CONTENT_MARGIN_WIDTH;
 
             // string to print, cut to fit the length and position of the view
             const QString line = lines[i - firstLine];
