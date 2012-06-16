@@ -148,7 +148,7 @@ inline void LineDrawer::addChunk( const LineChunk& chunk,
 }
 
 inline void LineDrawer::draw( QPainter& painter,
-        int xPos, int yPos, int xPadding, int line_width, const QString& line )
+        int xPos, int yPos, int line_width, const QString& line )
 {
     QFontMetrics fm = painter.fontMetrics();
     const int fontHeight = fm.height();
@@ -166,7 +166,7 @@ inline void LineDrawer::draw( QPainter& painter,
         painter.fillRect( xPos, yPos, chunk_width,
                 fontHeight, chunk.backColor() );
         painter.setPen( chunk.foreColor() );
-        painter.drawText( xPos + xPadding, yPos + fontAscent, cutline );
+        painter.drawText( xPos, yPos + fontAscent, cutline );
         xPos += chunk_width;
     }
 
@@ -622,7 +622,6 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
         const int SEPARATOR_WIDTH = 1;
         const int BULLET_MARGIN_WIDTH = 11;
         const int LINE_NUMBER_PADDING = 3;
-        const int CONTENT_PADDING = 2;
 
         // First check the lines to be drawn are within range (might not be the case if
         // the file has just changed)
@@ -770,7 +769,7 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
                     lineDrawer.addChunk ( chunk, fore, back );
                 }
 
-                lineDrawer.draw( painter, xPos, yPos, CONTENT_PADDING,
+                lineDrawer.draw( painter, xPos, yPos,
                                  viewport()->width(), cutLine );
             }
             else {
@@ -778,8 +777,7 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
                 painter.fillRect( xPos, yPos, viewport()->width(),
                         fontHeight, backColor );
                 painter.setPen( foreColor );
-                painter.drawText( xPos + CONTENT_PADDING, yPos + fontAscent,
-                                  cutLine );
+                painter.drawText( xPos, yPos + fontAscent, cutLine );
             }
 
             // Then draw the bullet
