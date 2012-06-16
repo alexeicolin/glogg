@@ -177,6 +177,10 @@ class AbstractLogView : public QAbstractScrollArea
     enum LineType { Normal, Marked, Match };
     virtual LineType lineType( int lineNumber ) const = 0;
 
+    // Line number to display for line at the given index
+    virtual qint64 displayLineNumber( int lineNumber ) const;
+    virtual qint64 maxDisplayLineNumber() const;
+
     // Get the overview associated with this view, or NULL if there is none
     Overview* getOverview() const { return overview_; }
     // Set the Overview

@@ -617,9 +617,9 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
         int lineNumberMarginX = 0;
         if ( lineNumbersVisible_ ) {
             // TODO: Calculate these once per file load
-            int totalLines = logData->getNbLine();
-            maxLineNumberDigits = totalLines > 0 ?
-                qFloor( qLn( totalLines ) / qLn( 10 ) + 1 ) : 1;
+            int maxDisplayLineNb = maxDisplayLineNumber();
+            maxLineNumberDigits = maxDisplayLineNb > 0 ?
+                qFloor( qLn( maxDisplayLineNb ) / qLn( 10 ) + 1 ) : 1;
             int lineNumberWidth = charWidth_ * maxLineNumberDigits;
             int lineNumberMarginWidth =
                 2 * LINE_NUMBER_PADDING + lineNumberWidth;
@@ -779,7 +779,8 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
             if ( lineNumbersVisible_ ) {
                 static const QString lineNumberFormat( "%1" );
                 const QString& lineNumberStr =
-                    lineNumberFormat.arg( i + 1, maxLineNumberDigits );
+                    lineNumberFormat.arg( displayLineNumber( i ),
+                                          maxLineNumberDigits );
                 painter.setPen( palette.color( QPalette::Text ) );
                 painter.drawText( lineNumberMarginX + LINE_NUMBER_PADDING,
                                   yPos + fontAscent, lineNumberStr );
@@ -788,6 +789,16 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
         } // For each line
     }
     LOG(logDEBUG4) << "End of repaint";
+}
+
+qint64 AbstractLogView::displayLineNumber( int lineNumber ) const
+{
+    return lineNumber + 1; // show a 1-based index
+}
+
+qint64 AbstractLogView::maxDisplayLineNumber() const
+{
+    return logData->getNbLine();
 }
 
 void AbstractLogView::setOverview( Overview* overview )
