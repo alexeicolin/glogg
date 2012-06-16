@@ -47,6 +47,48 @@
 #include "overview.h"
 #include "configuration.h"
 
+namespace {
+
+int countDigits( quint64 n )
+{
+    if (n == 0)
+        return 1;
+
+    // We must force the compiler to not store intermediate results
+    // in registers because this causes incorrect result on some
+    // systems under optimizations level >0. For the skeptical:
+    //
+    // #include <math.h>
+    // #include <stdlib.h>
+    // int main(int argc, char **argv) {
+    //     (void)argc;
+    //     long long int n = atoll(argv[1]);
+    //     return floor( log( n ) / log( 10 ) + 1 );
+    // }
+    //
+    // This is on Thinkpad T60 (Genuine Intel(R) CPU T2300).
+    // $ g++ --version
+    // g++ (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
+    // $ g++ -O0 -Wall -W -o math math.cpp -lm; ./math 10; echo $?
+    // 2
+    // $ g++ -O1 -Wall -W -o math math.cpp -lm; ./math 10; echo $?
+    // 1
+    //
+    // A fix is to (1) explicitly place intermediate results in
+    // variables *and* (2) [A] mark them as 'volatile', or [B] pass
+    // -ffloat-store to g++ (note that approach [A] is more portable).
+
+    volatile qreal ln_n  = qLn( n );
+    volatile qreal ln_10 = qLn( 10 );
+    volatile qreal lg_n = ln_n / ln_10;
+    volatile qreal lg_n_1 = lg_n + 1;
+    volatile qreal fl_lg_n_1 = qFloor( lg_n_1 );
+
+    return fl_lg_n_1;
+}
+
+} // anon namespace
+
 
 LineChunk::LineChunk( int first_col, int last_col, ChunkType type )
 {
@@ -617,9 +659,7 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
         int lineNumberMarginX = 0;
         if ( lineNumbersVisible_ ) {
             // TODO: Calculate these once per file load
-            int maxDisplayLineNb = maxDisplayLineNumber();
-            maxLineNumberDigits = maxDisplayLineNb > 0 ?
-                qFloor( qLn( maxDisplayLineNb ) / qLn( 10 ) + 1 ) : 1;
+            maxLineNumberDigits = countDigits( maxDisplayLineNumber() );
             int lineNumberWidth = charWidth_ * maxLineNumberDigits;
             int lineNumberMarginWidth =
                 2 * LINE_NUMBER_PADDING + lineNumberWidth;
