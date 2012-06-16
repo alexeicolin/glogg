@@ -619,7 +619,7 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
         static const QBrush matchBulletBrush = QBrush( Qt::red );
         static const QBrush markBrush = QBrush( "dodgerblue" );
 
-        const int LINE_WIDTH = 1;
+        const int SEPARATOR_WIDTH = 1;
         const int BULLET_MARGIN_WIDTH = 11;
         const int LINE_NUMBER_PADDING = 3;
         const int CONTENT_PADDING = 2;
@@ -652,7 +652,7 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
         painter.fillRect( bulletMarginX, 0,
                           BULLET_MARGIN_WIDTH, viewport()->height(),
                           Qt::darkGray );
-        leftMarginPx_ += BULLET_MARGIN_WIDTH + LINE_WIDTH;
+        leftMarginPx_ += BULLET_MARGIN_WIDTH + SEPARATOR_WIDTH;
 
         // Draw the line number margin
         int maxLineNumberDigits = 0;
@@ -672,7 +672,7 @@ void AbstractLogView::paintEvent( QPaintEvent* paintEvent )
             painter.fillRect( lineNumberMarginX, 0,
                               lineNumberMarginWidth, viewport()->height(),
                               Qt::lightGray );
-            leftMarginPx_ += lineNumberMarginWidth + LINE_WIDTH;
+            leftMarginPx_ += lineNumberMarginWidth + SEPARATOR_WIDTH;
         }
 
         // Then draw each line
